@@ -1,6 +1,10 @@
+import Header from "./Header"
+
 const Browse = () => {
   return (
-    <div >Browse</div>
+    <section className="relative border border-white flex">
+      <Header />
+    </section>
   )
 }
 

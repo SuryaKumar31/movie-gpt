@@ -2,12 +2,18 @@ import Header from "./Header"
 import banner from "../assets/banner.jpg"
 import { useRef, useState } from "react"
 import { checkValidate } from "../utils/validate"
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../utils/firebase";
+import { useNavigate } from "react-router-dom";
+import { USER_AVATAR } from "../utils/constants";
+import { addUser } from "../utils/userSlice";
+import { useDispatch } from "react-redux";
 
 const Login = () => {
   const [isSignInForm, setIsSignInForm] = useState(true)
   const [errorMessage, setErrorMessage] = useState(null)
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   const name = useRef(null)
   const email = useRef(null)
@@ -26,14 +32,33 @@ const Login = () => {
 
     if (message) return;
 
-
-
     if (!isSignInForm) {
       //sign up logic
       createUserWithEmailAndPassword(auth, email.current.value, password.current.value)
         .then((userCredential) => {
           const user = userCredential.user;
+
+          //update user name and pic
+          updateProfile(user, {
+            displayName: name.current.value, photoURL: USER_AVATAR
+          }).then(() => {
+            //dispatch
+            const { uid, email, displayName, photoURL } = auth.currentUser
+            dispatch(addUser({
+              uid: uid,
+              email: email,
+              displayName: displayName,
+              photoURL: photoURL
+            }))
+
+            // navigate("/browse")
+          }).catch((error) => {
+            setErrorMessage(error.message)
+          });
+
           console.log(user);
+          alert("Wohoo! Successfully Account Created!")
+
         })
         .catch((error) => {
           const errorCode = error.code;
@@ -46,6 +71,8 @@ const Login = () => {
         .then((userCredential) => {
           const user = userCredential.user;
           console.log(user);
+          alert("Successfully Logged In!")
+          // navigate("/browse")
         })
         .catch((error) => {
           const errorCode = error.code;
@@ -57,10 +84,9 @@ const Login = () => {
   }
 
   return (
-    <section className="rounded w-full h-screen">
+    <section className="rounded w-full h-screen relative">
       <Header />
       <img src={banner} alt="banner" className="w-full h-full object-cover" />
-
       {/* form  */}
       <form onSubmit={(e) => e.preventDefault()} className="login-form">
         <h1 className="font-bold text-4xl"> {isSignInForm ? "Sign In" : "Sign Up"}</h1>
